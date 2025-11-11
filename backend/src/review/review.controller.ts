@@ -18,9 +18,15 @@ export class ReviewController {
     constructor(private readonly reviewService: ReviewService) {}
 
     @UseGuards(JwtAuthGuard) // 🔒 Protegido
-    @Post()
-    create(@Body() createReviewDto: CreateReviewDto) {
-        return this.reviewService.create(createReviewDto);
+    @Post('/movie/:idPelicula')
+    create(
+        @Body() createReviewDto: CreateReviewDto,
+        @Param('idPelicula') idPelicula: number,
+    ) {
+        return this.reviewService.addReviewForMovie(
+            createReviewDto,
+            idPelicula,
+        );
     }
 
     @Get() // 🌍 Público

@@ -24,8 +24,4 @@ export class CreateReviewDto {
     @Max(5, { message: 'La calificación máxima es 5' })
     @IsNotEmpty({ message: 'La calificación es obligatoria' })
     rating: number;
-
-    @IsNumber({}, { message: 'El ID de la película debe ser un número' })
-    @IsNotEmpty({ message: 'El ID de la película es obligatorio' })
-    movieId: number;
 }

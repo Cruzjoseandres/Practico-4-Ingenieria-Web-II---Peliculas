@@ -14,15 +14,15 @@ export class ReviewService {
         private movieService: MovieService,
     ) {}
 
-    create(createReviewDto: CreateReviewDto, idPelicula: number) {
-        const movie = this.movieService.findOne(idPelicula);
-        const reviewPelicula: Review = {
-            comment: createReviewDto.comment,
-            rating: createReviewDto.rating,
-            movie: movie
-        };
+    async addReviewForMovie(createReviewDto: CreateReviewDto, movieId: number) {
+        const review = this.reviewRepository.create(createReviewDto);
+        const movie = await this.movieService.findOne(movieId);
 
-        return this.reviewRepository.save(reviewPelicula);
+        if (!movie) {
+            throw new Error('Movie not found');
+        }
+        review.movie = movie;
+        return await this.reviewRepository.save(review);
     }
 
     findAll() {

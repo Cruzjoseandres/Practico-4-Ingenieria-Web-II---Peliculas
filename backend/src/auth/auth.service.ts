@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/user/entities/user.entity';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -11,24 +11,30 @@ export class AuthService {
         private jwtService: JwtService,
     ) {}
 
-    async validateUser(username: string, password: string) {
-        const user = await this.usersService.findByUsername(username);
-        if (user && (await bcrypt.compare(password, user.password))) {
-            const usuario = {
-                id: user.id,
-                username: user.username,
-                fullName: user.fullName,
-            };
-            return usuario;
+    async login(loginDto: LoginDto) {
+        const usuario = await this.usersService.findByUsername(
+            loginDto.username,
+        );
+        if (!usuario) {
+            throw new UnauthorizedException('Credenciales inválidas');
         }
-        throw new UnauthorizedException('Credenciales inválidas');
-    }
 
-    async login(user: User) {
-        const payload = { username: user.username, sub: user.id };
+        const passwordMatches = await bcrypt.compare(
+            loginDto.password,
+            usuario.password,
+        );
+        if (!passwordMatches) {
+            throw new UnauthorizedException('Credenciales inválidas');
+        }
+        const usuarioobj = {
+            id: usuario.id,
+            username: usuario.username,
+            fullName: usuario.fullName,
+        };
+        const payload = { username: usuario.username, sub: usuario.id };
         return Promise.resolve({
             access_token: this.jwtService.sign(payload),
-            user,
+            user: usuarioobj,
         });
     }
 }
