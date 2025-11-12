@@ -13,33 +13,6 @@ export class UserService {
         private readonly userRepository: Repository<User>,
     ) {}
 
-    async create(createUserDto: CreateUserDto) {
-        const userExist = await this.userRepository.findOne({
-            where: { username: createUserDto.username },
-        });
-
-        if (userExist) {
-            throw new Error('El username ya esta en uso');
-        }
-
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(
-            createUserDto.password,
-            saltRounds,
-        );
-
-        const user = this.userRepository.create({
-            ...createUserDto,
-            password: hashedPassword,
-        });
-        await this.userRepository.save(user);
-        const usuarioCreado = {
-            username: user.username,
-            fullName: user.fullName,
-        };
-        return usuarioCreado;
-    }
-
     async findAll() {
         const usuarios = await this.userRepository.find();
 
@@ -70,5 +43,15 @@ export class UserService {
 
     async findByUsername(username: string) {
         return this.userRepository.findOne({ where: { username } });
+    }
+
+    async create(createUserDto: CreateUserDto) {
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+        const newUser = this.userRepository.create({
+            username: createUserDto.username,
+            fullName: createUserDto.fullName,
+            password: hashedPassword,
+        });
+        return this.userRepository.save(newUser);
     }
 }

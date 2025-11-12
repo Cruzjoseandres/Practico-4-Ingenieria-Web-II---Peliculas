@@ -1,42 +1,52 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { Movie } from './entities/movie.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UpdateMovieDto } from './dto/update-movie.dto';
 
 @Injectable()
 export class MovieService {
     constructor(
         @InjectRepository(Movie)
-        private readonly movieRepository: Repository<Movie>,
+        private readonly movieRepository: Repository<Movie>
     ) {}
 
-    async createPelicula(createMovieDto: CreateMovieDto) {
-        const movie = this.movieRepository.create(createMovieDto);
+    async createPelicula(createMovieDto: CreateMovieDto, file: Express.Multer.File) {
+        if (!file) {
+            throw new BadRequestException('La imagen es requerida');
+        }
+        console.log('antes de crear la pelicula');
+        const movie = this.movieRepository.create({
+            ...createMovieDto,
+            imageUrl: `/uploads/${file.filename}`,
+        });
         return await this.movieRepository.save(movie);
     }
 
     async findAll() {
-        return await this.movieRepository.find();
+        const movies = await this.movieRepository.find();
+        if (movies.length === 0) {
+            throw new BadRequestException('No hay peliculas disponibles');
+        }
+        return movies;
     }
 
     async findOne(id: number) {
-        return await this.movieRepository.findOneBy({ id });
+        const movie = await this.movieRepository.findOneBy({ id });
+        if (!movie) {
+            throw new Error('Movie not found');
+        }
+        return movie;
     }
 
-    async addReviewMoviesbyId(id: number) {
-        const movieReview = await this.movieRepository.findOne({
-            where: { id },
-            relations: ['reviews'],
-        });
-        return movieReview;
+    async update(id: number, updateMovieDto: UpdateMovieDto) {
+        await this.findOne(id);
+        return await this.movieRepository.update(id, updateMovieDto);
     }
 
     async remove(id: number) {
+        await this.findOne(id);
         return await this.movieRepository.delete(id);
-    }
-
-    async update(id: number, updateMovieDto: Partial<CreateMovieDto>) {
-        return await this.movieRepository.update(id, updateMovieDto);
     }
 }

@@ -1,11 +1,13 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateMovieDto {
+export class RegisterDto {
     @IsString()
     @IsNotEmpty()
-    title: string;
-
+    username: string;
     @IsString()
     @IsNotEmpty()
-    description: string;
+    password: string;
+    @IsString()
+    @IsNotEmpty()
+    fullName: string;
 }
