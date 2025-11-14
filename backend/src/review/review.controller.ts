@@ -7,11 +7,16 @@ import {
     Param,
     Delete,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateMovieDto } from '../movie/dto/create-movie.dto';
+import { GetUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('review')
 export class ReviewController {
@@ -19,13 +24,24 @@ export class ReviewController {
 
     @UseGuards(JwtAuthGuard) // 🔒 Protegido
     @Post('/movie/:idPelicula')
-    create(
+    create(@Body() createReviewDto: CreateReviewDto, @Param('idPelicula') idPelicula: number) {
+        return this.reviewService.addReviewForMovie(createReviewDto, idPelicula);
+    }
+
+    @Post()
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('image'))
+    async createReview(
         @Body() createReviewDto: CreateReviewDto,
-        @Param('idPelicula') idPelicula: number,
+        @Body() createMovieDto: CreateMovieDto,
+        @UploadedFile() file: Express.Multer.File,
+        @GetUser() user: any
     ) {
-        return this.reviewService.addReviewForMovie(
+        return await this.reviewService.createReview(
             createReviewDto,
-            idPelicula,
+            createMovieDto,
+            file,
+            user.sub
         );
     }
 
