@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { ReviewController } from './review.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Review } from './entities/review.entity';
-import { MovieModule } from 'src/movie/movie.module';
+import { MovieModule } from '../movie/movie.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Review]), MovieModule],
+    imports: [TypeOrmModule.forFeature([Review]), forwardRef(() => MovieModule)],
     controllers: [ReviewController],
     providers: [ReviewService],
+    exports: [ReviewService],
 })
 export class ReviewModule {}

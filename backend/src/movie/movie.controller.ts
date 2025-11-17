@@ -27,7 +27,6 @@ export class MovieController {
         @Body() createMovieDto: CreateMovieDto,
         @UploadedFile() file: Express.Multer.File
     ) {
-        console.log('Received file:', file);
         return await this.movieService.createPelicula(createMovieDto, file);
     }
 
@@ -37,8 +36,9 @@ export class MovieController {
     }
 
     @Get(':id') // 🌍 Público
-    findOne(@Param('id') id: string) {
-        return this.movieService.findOne(+id);
+    findOne(@Param('id') id: number) {
+        console.log('ID EN CONTROLLER', id);
+        return this.movieService.findById(id);
     }
 
     // @UseGuards(JwtAuthGuard) // 🔒 Protegido

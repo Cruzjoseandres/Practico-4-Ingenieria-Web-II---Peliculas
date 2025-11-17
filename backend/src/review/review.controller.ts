@@ -9,6 +9,7 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    Put,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -22,10 +23,14 @@ import { GetUser } from '../auth/decorators/current-user.decorator';
 export class ReviewController {
     constructor(private readonly reviewService: ReviewService) {}
 
-    @UseGuards(JwtAuthGuard) // 🔒 Protegido
+    @UseGuards(JwtAuthGuard)
     @Post('/movie/:idPelicula')
-    create(@Body() createReviewDto: CreateReviewDto, @Param('idPelicula') idPelicula: number) {
-        return this.reviewService.addReviewForMovie(createReviewDto, idPelicula);
+    create(
+        @Body() createReviewDto: CreateReviewDto,
+        @Param('idPelicula') idPelicula: number,
+        @GetUser() user: any
+    ) {
+        return this.reviewService.addReviewForMovie(createReviewDto, idPelicula, user);
     }
 
     @Post()
@@ -37,33 +42,34 @@ export class ReviewController {
         @UploadedFile() file: Express.Multer.File,
         @GetUser() user: any
     ) {
-        return await this.reviewService.createReview(
-            createReviewDto,
-            createMovieDto,
-            file,
-            user.sub
-        );
+        return await this.reviewService.createReview(createReviewDto, createMovieDto, file, user);
     }
 
-    @Get() // 🌍 Público
+    @Get()
     findAll() {
         return this.reviewService.findAll();
     }
 
-    @Get(':id') // 🌍 Público
+    @Get(':id')
     findOne(@Param('id') id: string) {
         return this.reviewService.findOne(+id);
     }
 
-    @UseGuards(JwtAuthGuard) // 🔒 Protegido
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-        return this.reviewService.update(+id, updateReviewDto);
+    @UseGuards(JwtAuthGuard)
+    @Put(':id')
+    update(@Param('id') id: number, @Body() updateReviewDto: UpdateReviewDto) {
+        return this.reviewService.update(id, updateReviewDto);
     }
 
-    @UseGuards(JwtAuthGuard) // 🔒 Protegido
+    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.reviewService.remove(+id);
+    }
+
+    @Get('/user/:userId')
+    @UseGuards(JwtAuthGuard)
+    async findReviewsByUserId(@Param('userId') userId: number) {
+        return await this.reviewService.findReviewsByUserId(userId);
     }
 }

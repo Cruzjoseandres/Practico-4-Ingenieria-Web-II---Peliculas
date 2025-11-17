@@ -1,15 +1,11 @@
 import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateMovieDto {
-    @IsString()
-    @IsOptional()
+    @IsString({ message: 'El titulo debe ser un texto' })
+    @IsOptional({ message: 'El titulo es opcional' })
     title: string;
 
-    @IsString()
-    @IsOptional()
+    @IsString({ message: 'La descripcion debe ser un texto' })
+    @IsOptional({ message: 'La descripcion es opcional' })
     description: string;
-
-    @IsString()
-    @IsOptional()
-    imageUrl: string;
 }

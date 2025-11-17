@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MovieService } from './movie.service';
 import { MovieController } from './movie.controller';
 import { Movie } from './entities/movie.entity';
@@ -7,13 +7,16 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { randomBytes } from 'crypto';
+import { Review } from '../review/entities/review.entity';
+import { ReviewModule } from '../review/review.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Movie]),
+        TypeOrmModule.forFeature([Movie, Review]),
+        forwardRef(() => ReviewModule),
         MulterModule.register({
             storage: diskStorage({
-                destination: './uploads/movies',
+                destination: './uploads',
                 filename: (req, file, cb) => {
                     const hash = randomBytes(16).toString('hex'); // ← 'hex' entre comillas
                     const ext = extname(file.originalname);

@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateMovieDto {
-    @IsString()
-    @IsNotEmpty()
+    @IsString({ message: 'El titulo debe ser un texto' })
+    @IsNotEmpty({ message: 'El titulo es obligatorio' })
     title: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsString({ message: 'La descripcion debe ser un texto' })
+    @IsNotEmpty({ message: 'La descripcion es obligatoria' })
     description: string;
 }

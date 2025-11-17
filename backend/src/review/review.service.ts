@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +13,7 @@ export class ReviewService {
     constructor(
         @InjectRepository(Review)
         private readonly reviewRepository: Repository<Review>,
+        @Inject(forwardRef(() => MovieService))
         private movieService: MovieService
     ) {}
 
@@ -32,30 +33,104 @@ export class ReviewService {
         return await this.reviewRepository.save(review);
     }
 
-    async addReviewForMovie(createReviewDto: CreateReviewDto, movieId: number) {
-        const review = this.reviewRepository.create(createReviewDto);
+    async addReviewForMovie(createReviewDto: CreateReviewDto, movieId: number, userId: number) {
         const movie = await this.movieService.findOne(movieId);
-
-        if (!movie) {
-            throw new Error('Movie not found');
-        }
+        const review = this.reviewRepository.create({
+            comment: createReviewDto.comment,
+            rating: createReviewDto.rating,
+            user: { id: userId } as User,
+            movie: movie,
+        });
         review.movie = movie;
-        return await this.reviewRepository.save(review);
+        await this.reviewRepository.save(review);
+        return await this.findReviewsByMovieId(movieId);
     }
 
-    findAll() {
-        return this.reviewRepository.find();
+    async findAll() {
+        const reviews = await this.reviewRepository.find();
+        if (!reviews) {
+            throw new Error('Review no encontrada');
+        }
+
+        return reviews;
     }
 
-    findOne(id: number) {
-        return this.reviewRepository.findOneBy({ id });
+    async findOne(id: number) {
+        const review = await this.reviewRepository.findOneBy({ id });
+        if (!review) {
+            throw new Error('Review no encontrada');
+        }
+        const user = {
+            id: review.user.id,
+            username: review.user.username,
+        };
+
+        const movie = await this.movieService.findOne(review.movie.id);
+
+        const reviewObject = {
+            id: review.id,
+            comment: review.comment,
+            rating: review.rating,
+            user: user,
+            movie: movie,
+        };
+        return reviewObject;
     }
 
-    update(id: number, updateReviewDto: UpdateReviewDto) {
-        return this.reviewRepository.update(id, updateReviewDto);
+    async update(id: number, updateReviewDto: UpdateReviewDto) {
+        const review = await this.findOne(id);
+        if (updateReviewDto.comment) {
+            review.comment = updateReviewDto.comment;
+        }
+        if (updateReviewDto.rating) {
+            review.rating = updateReviewDto.rating;
+        }
+        await this.reviewRepository.update(id, review);
+        return await this.findOne(id);
     }
 
-    remove(id: number) {
+    async remove(id: number) {
+        await this.findOne(id);
         return this.reviewRepository.delete(id);
+    }
+    async findReviewsByMovieId(id: number) {
+        const reviews = await this.reviewRepository.find({
+            where: { movie: { id } },
+            relations: ['user'],
+        });
+
+        const reviewsSimplificadas: Array<{ comment: string; rating: number; user: User }> = [];
+
+        for (const review of reviews) {
+            reviewsSimplificadas.push({
+                comment: review.comment,
+                rating: review.rating,
+                user: review.user,
+            });
+        }
+        return reviewsSimplificadas;
+    }
+    async findReviewsByUserId(id: number) {
+        const reviews = await this.reviewRepository.find({
+            where: { user: { id } },
+            relations: ['movie'],
+        });
+
+        const reviewsSimplificadas: Array<{
+            id: number;
+            comment: string;
+            rating: number;
+            movieTitle: string;
+        }> = [];
+
+        for (const review of reviews) {
+            reviewsSimplificadas.push({
+                id: review.id,
+                comment: review.comment,
+                rating: review.rating,
+                movieTitle: review.movie.title,
+            });
+        }
+        return reviewsSimplificadas;
     }
 }

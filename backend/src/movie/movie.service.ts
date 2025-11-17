@@ -1,15 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject, forwardRef } from '@nestjs/common';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { Movie } from './entities/movie.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateMovieDto } from './dto/update-movie.dto';
+import { ReviewService } from 'src/review/review.service';
 
 @Injectable()
 export class MovieService {
     constructor(
         @InjectRepository(Movie)
-        private readonly movieRepository: Repository<Movie>
+        private readonly movieRepository: Repository<Movie>,
+        @Inject(forwardRef(() => ReviewService))
+        private reviewService: ReviewService
     ) {}
 
     async createPelicula(createMovieDto: CreateMovieDto, file: Express.Multer.File) {
@@ -32,10 +35,28 @@ export class MovieService {
         return movies;
     }
 
+    async findById(id: number) {
+        const movie = await this.movieRepository.findOne({
+            where: { id },
+        });
+
+        if (!movie) {
+            throw new BadRequestException('Movie not found');
+        }
+
+        const reviews = await this.reviewService.findReviewsByMovieId(id);
+        return {
+            id: movie.id,
+            title: movie.title,
+            description: movie.description,
+            imageUrl: movie.imageUrl,
+            reviews,
+        };
+    }
     async findOne(id: number) {
         const movie = await this.movieRepository.findOneBy({ id });
         if (!movie) {
-            throw new Error('Movie not found');
+            throw new BadRequestException('Movie not found');
         }
         return movie;
     }
